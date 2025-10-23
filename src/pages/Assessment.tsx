@@ -36,44 +36,27 @@ const Assessment = () => {
     job_description_understanding: "",
     work_control_update: "",
     task_management_tools: "",
-    org_structure_score: 30,
-    job_description_score: 30,
     sop_purchasing_status: "",
-    sop_purchasing_score: 30,
     sop_production_status: "",
-    sop_production_score: 30,
     sop_sales_status: "",
-    sop_sales_score: 30,
     sop_financial_status: "",
-    sop_financial_score: 30,
     sop_inventory_status: "",
-    sop_inventory_score: 30,
     sop_human_dev_status: "",
-    sop_human_dev_score: 30,
     doc_purchasing_status: "",
-    doc_purchasing_score: 30,
     doc_production_status: "",
-    doc_production_score: 30,
     doc_sales_status: "",
-    doc_sales_score: 30,
     doc_financial_status: "",
-    doc_financial_score: 30,
     doc_inventory_status: "",
-    doc_inventory_score: 30,
     inventory_code_category: "",
     warehouse_layout: "",
     warehouse_equipment: "",
     stock_card: "",
     buffer_stock_reorder: "",
     fixed_asset_recording: "",
-    inventory_mgmt_score: 30,
-    asset_mgmt_score: 30,
     financial_software: "",
     financial_reports: "",
     coa: "",
     customer_supplier_classification: "",
-    financial_recording_score: 30,
-    financial_analysis_score: 30,
   });
 
   const totalSteps = 6;
@@ -95,19 +78,39 @@ const Assessment = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
+      // Add default scores (50 for all categories) - these will be calculated by AI
+      const dataWithScores = {
+        ...formData,
+        org_structure_score: 50,
+        job_description_score: 50,
+        sop_purchasing_score: 50,
+        sop_production_score: 50,
+        sop_sales_score: 50,
+        sop_financial_score: 50,
+        sop_inventory_score: 50,
+        sop_human_dev_score: 50,
+        doc_purchasing_score: 50,
+        doc_production_score: 50,
+        doc_sales_score: 50,
+        doc_financial_score: 50,
+        doc_inventory_score: 50,
+        inventory_mgmt_score: 50,
+        asset_mgmt_score: 50,
+        financial_recording_score: 50,
+        financial_analysis_score: 50,
+      };
+
       const { data, error } = await supabase
         .from('assessments')
-        .insert([formData])
+        .insert([dataWithScores])
         .select()
         .single();
 
       if (error) throw error;
-
-      toast.success("Assessment berhasil disimpan!");
       
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'generate-recommendations',
-        { body: { assessmentData: formData } }
+        { body: { assessmentData: dataWithScores } }
       );
 
       if (functionError) {

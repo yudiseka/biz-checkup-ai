@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 
 interface FinancialFormProps {
   formData: any;
@@ -64,31 +63,6 @@ export const FinancialForm = ({ formData, setFormData }: FinancialFormProps) => 
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Score Sistem Pencatatan Keuangan: {formData.financial_recording_score}</Label>
-          <Slider
-            value={[formData.financial_recording_score]}
-            onValueChange={([value]) => handleChange('financial_recording_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Score Analisa Laporan Keuangan: {formData.financial_analysis_score}</Label>
-          <Slider
-            value={[formData.financial_analysis_score]}
-            onValueChange={([value]) => handleChange('financial_analysis_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
       </div>
     </div>
   );

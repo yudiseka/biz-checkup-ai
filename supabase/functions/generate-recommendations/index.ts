@@ -76,23 +76,17 @@ Format rekomendasi dalam paragraf yang jelas, fokus pada area dengan skor rendah
       headers: {
         'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://business-checkup.lovable.app',
+        'HTTP-Referer': 'https://gxqhgmwceuqhuvrpncao.supabase.co',
         'X-Title': 'Business Checkup AI'
       },
       body: JSON.stringify({
-        model: 'qwen/qwen-2.5-72b-instruct:free',
+        model: 'google/gemini-2.0-flash-exp:free',
         messages: [
           {
-            role: 'system',
-            content: 'Anda adalah konsultan bisnis profesional yang ahli dalam menganalisis kondisi perusahaan dan memberikan rekomendasi strategis yang actionable. Berikan rekomendasi dalam bahasa Indonesia yang profesional namun mudah dipahami.'
-          },
-          {
             role: 'user',
-            content: prompt
+            content: `Anda adalah konsultan bisnis profesional yang ahli dalam menganalisis kondisi perusahaan dan memberikan rekomendasi strategis yang actionable. Berikan rekomendasi dalam bahasa Indonesia yang profesional namun mudah dipahami.\n\n${prompt}`
           }
-        ],
-        temperature: 0.7,
-        max_tokens: 2000
+        ]
       })
     });
 

@@ -1,7 +1,5 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Slider } from "@/components/ui/slider";
 
 interface OrganizationFormProps {
   formData: any;
@@ -87,31 +85,6 @@ export const OrganizationForm = ({ formData, setFormData }: OrganizationFormProp
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Score Struktur Organisasi: {formData.org_structure_score}</Label>
-          <Slider
-            value={[formData.org_structure_score]}
-            onValueChange={([value]) => handleChange('org_structure_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Score Job Description: {formData.job_description_score}</Label>
-          <Slider
-            value={[formData.job_description_score]}
-            onValueChange={([value]) => handleChange('job_description_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
       </div>
     </div>
   );

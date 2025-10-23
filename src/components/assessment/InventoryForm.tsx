@@ -1,6 +1,5 @@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { Slider } from "@/components/ui/slider";
 
 interface InventoryFormProps {
   formData: any;
@@ -86,31 +85,6 @@ export const InventoryForm = ({ formData, setFormData }: InventoryFormProps) => 
           />
         </div>
 
-        <div className="space-y-2">
-          <Label>Score Inventory Management: {formData.inventory_mgmt_score}</Label>
-          <Slider
-            value={[formData.inventory_mgmt_score]}
-            onValueChange={([value]) => handleChange('inventory_mgmt_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
-
-        <div className="space-y-2">
-          <Label>Score Asset Management: {formData.asset_mgmt_score}</Label>
-          <Slider
-            value={[formData.asset_mgmt_score]}
-            onValueChange={([value]) => handleChange('asset_mgmt_score', value)}
-            min={0}
-            max={100}
-            step={10}
-            className="mt-2"
-          />
-          <p className="text-sm text-muted-foreground">0 = Sangat buruk, 100 = Sangat baik</p>
-        </div>
       </div>
     </div>
   );
