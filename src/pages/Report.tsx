@@ -25,25 +25,6 @@ const Report = () => {
 
         if (error) throw error;
         setAssessment(data);
-        
-        // If recommendations are not yet generated, poll for updates
-        if (!data.ai_recommendations) {
-          const pollInterval = setInterval(async () => {
-            const { data: updatedData } = await supabase
-              .from('assessments')
-              .select('*')
-              .eq('id', id)
-              .single();
-            
-            if (updatedData?.ai_recommendations) {
-              setAssessment(updatedData);
-              clearInterval(pollInterval);
-            }
-          }, 3000); // Poll every 3 seconds
-
-          // Clear interval after 60 seconds
-          setTimeout(() => clearInterval(pollInterval), 60000);
-        }
       } catch (error) {
         console.error('Error fetching assessment:', error);
       } finally {
