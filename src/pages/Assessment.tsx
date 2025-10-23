@@ -78,7 +78,7 @@ const Assessment = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Add default scores (50 for all categories) - these will be calculated by AI
+      // Insert assessment data first with default scores
       const dataWithScores = {
         ...formData,
         org_structure_score: 50,
@@ -108,21 +108,43 @@ const Assessment = () => {
 
       if (error) throw error;
       
+      // Navigate to report immediately, AI will process in background
+      navigate(`/report/${data.id}`);
+      
+      // Generate recommendations and scores in background
       const { data: functionData, error: functionError } = await supabase.functions.invoke(
         'generate-recommendations',
-        { body: { assessmentData: dataWithScores } }
+        { body: { assessmentData: formData } }
       );
 
       if (functionError) {
         console.error('Error generating recommendations:', functionError);
-      } else if (functionData?.recommendations) {
+      } else if (functionData?.recommendations && functionData?.scores) {
+        // Update with AI-generated scores and recommendations
         await supabase
           .from('assessments')
-          .update({ ai_recommendations: functionData.recommendations })
+          .update({ 
+            ai_recommendations: functionData.recommendations,
+            org_structure_score: functionData.scores.org_structure_score,
+            job_description_score: functionData.scores.job_description_score,
+            sop_purchasing_score: functionData.scores.sop_score,
+            sop_production_score: functionData.scores.sop_score,
+            sop_sales_score: functionData.scores.sop_score,
+            sop_financial_score: functionData.scores.sop_score,
+            sop_inventory_score: functionData.scores.sop_score,
+            sop_human_dev_score: functionData.scores.sop_score,
+            doc_purchasing_score: functionData.scores.documentation_score,
+            doc_production_score: functionData.scores.documentation_score,
+            doc_sales_score: functionData.scores.documentation_score,
+            doc_financial_score: functionData.scores.documentation_score,
+            doc_inventory_score: functionData.scores.documentation_score,
+            inventory_mgmt_score: functionData.scores.inventory_mgmt_score,
+            asset_mgmt_score: functionData.scores.asset_mgmt_score,
+            financial_recording_score: functionData.scores.financial_recording_score,
+            financial_analysis_score: functionData.scores.financial_analysis_score,
+          })
           .eq('id', data.id);
       }
-
-      navigate(`/report/${data.id}`);
     } catch (error) {
       console.error('Error submitting assessment:', error);
       toast.error("Gagal menyimpan assessment. Silakan coba lagi.");
