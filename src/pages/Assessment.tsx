@@ -61,7 +61,29 @@ const Assessment = () => {
 
   const totalSteps = 6;
 
+  const validateCurrentStep = () => {
+    const stepFields: Record<number, string[]> = {
+      1: ['reviewer_name', 'reviewer_position', 'reviewer_email', 'reviewer_whatsapp', 'business_field', 'domicile', 'accounting_software', 'tax_status', 'monthly_revenue'],
+      2: ['vision_mission_culture', 'written_org_structure', 'department_division', 'job_description_understanding', 'work_control_update', 'task_management_tools'],
+      3: ['sop_purchasing_status', 'sop_production_status', 'sop_sales_status', 'sop_financial_status', 'sop_inventory_status', 'sop_human_dev_status'],
+      4: ['doc_purchasing_status', 'doc_production_status', 'doc_sales_status', 'doc_financial_status', 'doc_inventory_status'],
+      5: ['inventory_code_category', 'warehouse_layout', 'warehouse_equipment', 'stock_card', 'buffer_stock_reorder', 'fixed_asset_recording'],
+      6: ['financial_software', 'financial_reports', 'coa', 'customer_supplier_classification']
+    };
+
+    const fieldsToValidate = stepFields[currentStep] || [];
+    const emptyFields = fieldsToValidate.filter(field => !formData[field] || formData[field].toString().trim() === '');
+
+    if (emptyFields.length > 0) {
+      toast.error("Mohon lengkapi semua field yang diperlukan sebelum melanjutkan.");
+      return false;
+    }
+    return true;
+  };
+
   const handleNext = () => {
+    if (!validateCurrentStep()) return;
+    
     if (currentStep < totalSteps) {
       setCurrentStep(currentStep + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
