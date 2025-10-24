@@ -5,8 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileText, MessageSquare } from "lucide-react";
 import { CompanyInfo } from "@/components/report/CompanyInfo";
-import { ScoreSection } from "@/components/report/ScoreSection";
-import { RecommendationSection } from "@/components/report/RecommendationSection";
+import { AnalysisSection } from "@/components/report/AnalysisSection";
 import { CTASection } from "@/components/report/CTASection";
 
 const Report = () => {
@@ -25,6 +24,25 @@ const Report = () => {
 
         if (error) throw error;
         setAssessment(data);
+
+        // Poll for analysis if not yet available
+        if (!data.ai_analysis) {
+          const pollInterval = setInterval(async () => {
+            const { data: updatedData } = await supabase
+              .from('assessments')
+              .select('ai_analysis')
+              .eq('id', id)
+              .single();
+
+            if (updatedData?.ai_analysis) {
+              setAssessment((prev: any) => ({ ...prev, ai_analysis: updatedData.ai_analysis }));
+              clearInterval(pollInterval);
+            }
+          }, 3000);
+
+          // Stop polling after 60 seconds
+          setTimeout(() => clearInterval(pollInterval), 60000);
+        }
       } catch (error) {
         console.error('Error fetching assessment:', error);
       } finally {
@@ -69,8 +87,7 @@ const Report = () => {
 
         <div className="space-y-6">
           <CompanyInfo assessment={assessment} />
-          <ScoreSection assessment={assessment} />
-          <RecommendationSection recommendations={assessment.ai_recommendations} />
+          <AnalysisSection analysis={assessment.ai_analysis} />
           <CTASection />
         </div>
 

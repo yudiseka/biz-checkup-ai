@@ -78,49 +78,35 @@ const Assessment = () => {
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      // Add default scores (50 for all categories) - these will be calculated by AI
-      const dataWithScores = {
-        ...formData,
-        org_structure_score: 50,
-        job_description_score: 50,
-        sop_purchasing_score: 50,
-        sop_production_score: 50,
-        sop_sales_score: 50,
-        sop_financial_score: 50,
-        sop_inventory_score: 50,
-        sop_human_dev_score: 50,
-        doc_purchasing_score: 50,
-        doc_production_score: 50,
-        doc_sales_score: 50,
-        doc_financial_score: 50,
-        doc_inventory_score: 50,
-        inventory_mgmt_score: 50,
-        asset_mgmt_score: 50,
-        financial_recording_score: 50,
-        financial_analysis_score: 50,
-      };
-
       const { data, error } = await supabase
         .from('assessments')
-        .insert([dataWithScores])
+        .insert([formData])
         .select()
         .single();
 
       if (error) throw error;
       
-      const { data: functionData, error: functionError } = await supabase.functions.invoke(
-        'generate-recommendations',
-        { body: { assessmentData: dataWithScores } }
-      );
-
-      if (functionError) {
-        console.error('Error generating recommendations:', functionError);
-      } else if (functionData?.recommendations) {
-        await supabase
-          .from('assessments')
-          .update({ ai_recommendations: functionData.recommendations })
-          .eq('id', data.id);
-      }
+      // Generate AI analysis in the background
+      supabase.functions.invoke('generate-recommendations', {
+        body: { assessmentData: { ...formData, id: data.id } }
+      }).then(({ data: functionData, error: functionError }) => {
+        if (functionError) {
+          console.error('Error generating analysis:', functionError);
+          return;
+        }
+        
+        if (functionData?.analysis) {
+          supabase
+            .from('assessments')
+            .update({ ai_analysis: JSON.stringify(functionData.analysis) })
+            .eq('id', data.id)
+            .then(({ error: updateError }) => {
+              if (updateError) {
+                console.error('Error updating analysis:', updateError);
+              }
+            });
+        }
+      });
 
       navigate(`/report/${data.id}`);
     } catch (error) {

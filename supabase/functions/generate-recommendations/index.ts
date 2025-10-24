@@ -20,8 +20,8 @@ serve(async (req) => {
       throw new Error('OPENROUTER_API_KEY not configured');
     }
 
-    // Build comprehensive context for AI
-    const prompt = `Sebagai konsultan bisnis profesional, analisis hasil Business Checkup berikut dan berikan rekomendasi yang spesifik dan actionable.
+    // Build comprehensive analysis prompt for each question
+    const prompt = `Anda adalah konsultan bisnis profesional. Analisis setiap aspek bisnis berikut dan berikan penjelasan mengapa penting serta rekomendasi spesifik.
 
 PROFIL PERUSAHAAN:
 - Bidang Usaha: ${assessmentData.business_field}
@@ -31,45 +31,61 @@ PROFIL PERUSAHAAN:
 - Staff Operasional: ${assessmentData.num_operational_staff}
 - Omzet Bulanan: ${assessmentData.monthly_revenue}
 
-SKOR ORGANISASI & MANAJEMEN:
-- Struktur Organisasi: ${assessmentData.org_structure_score}/100
-- Job Description: ${assessmentData.job_description_score}/100
-- Visi Misi: ${assessmentData.vision_mission_culture}
+ORGANISASI & MANAJEMEN:
+- Visi Misi & Budaya: ${assessmentData.vision_mission_culture}
+- Struktur Organisasi Tertulis: ${assessmentData.written_org_structure}
 - Pembagian Departemen: ${assessmentData.department_division}
+- Pemahaman Job Description: ${assessmentData.job_description_understanding}
+- Kontrol & Update Pekerjaan: ${assessmentData.work_control_update}
 - Tools Management: ${assessmentData.task_management_tools}
 
-SKOR SOP:
-- Pembelian: ${assessmentData.sop_purchasing_score}/100
-- Produksi: ${assessmentData.sop_production_score}/100
-- Penjualan: ${assessmentData.sop_sales_score}/100
-- Financial: ${assessmentData.sop_financial_score}/100
-- Inventory: ${assessmentData.sop_inventory_score}/100
-- Human Dev: ${assessmentData.sop_human_dev_score}/100
+SOP:
+- SOP Pembelian: ${assessmentData.sop_purchasing_status}
+- SOP Produksi: ${assessmentData.sop_production_status}
+- SOP Penjualan: ${assessmentData.sop_sales_status}
+- SOP Financial: ${assessmentData.sop_financial_status}
+- SOP Inventory: ${assessmentData.sop_inventory_status}
+- SOP Human Dev: ${assessmentData.sop_human_dev_status}
 
-SKOR DOKUMENTASI:
-- Dokumen Pembelian: ${assessmentData.doc_purchasing_score}/100
-- Dokumen Produksi: ${assessmentData.doc_production_score}/100
-- Dokumen Penjualan: ${assessmentData.doc_sales_score}/100
-- Dokumen Financial: ${assessmentData.doc_financial_score}/100
-- Dokumen Inventory: ${assessmentData.doc_inventory_score}/100
+DOKUMENTASI:
+- Dokumen Pembelian: ${assessmentData.doc_purchasing_status}
+- Dokumen Produksi: ${assessmentData.doc_production_status}
+- Dokumen Penjualan: ${assessmentData.doc_sales_status}
+- Dokumen Financial: ${assessmentData.doc_financial_status}
+- Dokumen Inventory: ${assessmentData.doc_inventory_status}
 
-SKOR INVENTORY & ASET:
-- Inventory Management: ${assessmentData.inventory_mgmt_score}/100
-- Asset Management: ${assessmentData.asset_mgmt_score}/100
+INVENTORY & ASET:
+- Kode & Kategori Inventory: ${assessmentData.inventory_code_category}
+- Layout Gudang: ${assessmentData.warehouse_layout}
+- Peralatan Gudang: ${assessmentData.warehouse_equipment}
+- Kartu Stock: ${assessmentData.stock_card}
+- Buffer Stock & Reorder: ${assessmentData.buffer_stock_reorder}
+- Pencatatan Aset Tetap: ${assessmentData.fixed_asset_recording}
 
-SKOR KEUANGAN:
-- Sistem Pencatatan: ${assessmentData.financial_recording_score}/100
-- Analisa Laporan: ${assessmentData.financial_analysis_score}/100
-- Software: ${assessmentData.financial_software}
+KEUANGAN:
+- Software Keuangan: ${assessmentData.financial_software}
+- Laporan Keuangan: ${assessmentData.financial_reports}
+- Chart of Account: ${assessmentData.coa}
+- Klasifikasi Customer/Supplier: ${assessmentData.customer_supplier_classification}
 
-Berikan rekomendasi yang:
+Untuk SETIAP aspek di atas, berikan analisis dalam format JSON array dengan struktur:
+[
+  {
+    "kategori": "Organisasi & Manajemen",
+    "aspek": "Visi Misi & Budaya",
+    "kondisi": "ringkasan jawaban pengguna",
+    "pentingnya": "penjelasan mengapa aspek ini penting untuk bisnis ${assessmentData.business_field}",
+    "rekomendasi": "rekomendasi spesifik dan actionable"
+  }
+]
+
+Berikan analisis yang:
 1. Spesifik untuk bidang usaha ${assessmentData.business_field}
-2. Berdasarkan skor dan kondisi aktual perusahaan
-3. Diprioritaskan dari yang paling urgent
-4. Actionable dan praktis untuk diimplementasikan
-5. Dalam format yang terstruktur dan mudah dipahami
+2. Praktis dan mudah diimplementasikan
+3. Fokus pada improvement yang paling berdampak
+4. Menggunakan bahasa Indonesia yang profesional namun mudah dipahami
 
-Format rekomendasi dalam paragraf yang jelas, fokus pada area dengan skor rendah dan kebutuhan spesifik bisnis ini.`;
+PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
 
     const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
       method: 'POST',
@@ -83,26 +99,40 @@ Format rekomendasi dalam paragraf yang jelas, fokus pada area dengan skor rendah
         model: 'google/gemini-2.0-flash-exp:free',
         messages: [
           {
+            role: 'system',
+            content: 'You are a professional business consultant. Always respond with valid JSON array only, no additional text.'
+          },
+          {
             role: 'user',
-            content: `Anda adalah konsultan bisnis profesional yang ahli dalam menganalisis kondisi perusahaan dan memberikan rekomendasi strategis yang actionable. Berikan rekomendasi dalam bahasa Indonesia yang profesional namun mudah dipahami.\n\n${prompt}`
+            content: prompt
           }
-        ]
+        ],
+        response_format: { type: "json_object" }
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
-      throw new Error(`OpenRouter API error: ${response.status}`);
+      throw new Error('OpenRouter API error: ' + response.status);
     }
 
     const data = await response.json();
-    const recommendations = data.choices[0].message.content;
+    const analysisContent = data.choices[0].message.content;
+    
+    console.log('Analysis generated successfully');
 
-    console.log('Recommendations generated successfully');
+    // Parse the JSON response
+    let analysis;
+    try {
+      analysis = JSON.parse(analysisContent);
+    } catch (parseError) {
+      console.error('Error parsing AI response:', parseError);
+      throw new Error('Failed to parse AI analysis response');
+    }
 
     return new Response(
-      JSON.stringify({ recommendations }),
+      JSON.stringify({ analysis }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
