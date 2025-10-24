@@ -1,5 +1,6 @@
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.39.3';
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -130,6 +131,23 @@ PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
       console.error('Error parsing AI response:', parseError);
       throw new Error('Failed to parse AI analysis response');
     }
+
+    // Update the assessment in the database
+    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    const { error: updateError } = await supabase
+      .from('assessments')
+      .update({ ai_analysis: JSON.stringify(analysis) })
+      .eq('id', assessmentData.id);
+
+    if (updateError) {
+      console.error('Error updating assessment:', updateError);
+      throw new Error('Failed to update assessment with analysis');
+    }
+
+    console.log('Assessment updated successfully with analysis');
 
     return new Response(
       JSON.stringify({ analysis }),

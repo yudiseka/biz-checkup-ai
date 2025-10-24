@@ -87,24 +87,12 @@ const Assessment = () => {
       if (error) throw error;
       
       // Generate AI analysis in the background
+      // The edge function will update the database directly
       supabase.functions.invoke('generate-recommendations', {
         body: { assessmentData: { ...formData, id: data.id } }
-      }).then(({ data: functionData, error: functionError }) => {
+      }).then(({ error: functionError }) => {
         if (functionError) {
           console.error('Error generating analysis:', functionError);
-          return;
-        }
-        
-        if (functionData?.analysis) {
-          supabase
-            .from('assessments')
-            .update({ ai_analysis: JSON.stringify(functionData.analysis) })
-            .eq('id', data.id)
-            .then(({ error: updateError }) => {
-              if (updateError) {
-                console.error('Error updating analysis:', updateError);
-              }
-            });
         }
       });
 
