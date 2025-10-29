@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 
 interface SOPFormProps {
@@ -13,73 +14,138 @@ export const SOPForm = ({ formData, setFormData }: SOPFormProps) => {
   };
 
   const sopItems = [
-    { 
-      label: "SOP Pembelian", 
-      statusField: "sop_purchasing_status",
-      list: ["SOP pemilihan supplier", "SOP pengisian data supplier", "SOP permintaan pembelian", "SOP order pembelian", "SOP penerimaan barang", "SOP retur pembelian"]
+    {
+      label: "SOP Pembelian",
+      field: "sop_purchasing_status",
+      items: [
+        "Prosedur permintaan pembelian",
+        "Prosedur evaluasi supplier",
+        "Prosedur persetujuan pembelian",
+        "Prosedur penerimaan barang",
+        "Prosedur pembayaran supplier"
+      ]
     },
-    { 
-      label: "SOP Produksi", 
-      statusField: "sop_production_status",
-      list: ["SOP Pembuatan formula produk", "SOP Pengaturan schedule produksi", "SOP Surat perintah kerja produksi", "SOP Pengambilan bahan produksi", "SOP Proses produksi", "SOP Penambahan bahan produksi"]
+    {
+      label: "SOP Produksi",
+      field: "sop_production_status",
+      items: [
+        "Prosedur perencanaan produksi",
+        "Prosedur quality control",
+        "Prosedur maintenance mesin",
+        "Prosedur penanganan limbah",
+        "Prosedur keselamatan kerja"
+      ]
     },
-    { 
-      label: "SOP Penjualan", 
-      statusField: "sop_sales_status",
-      list: ["SOP Penawaran barang/jasa kepada calon customer", "SOP Permintaan Penjualan", "SOP pengisian data pelanggan", "SOP pengecekan kepastian data pelanggan", "SOP pemberian nominal kredit dan jatuh tempo pelanggan", "SOP Pengiriman Barang", "SOP Retur penjualan", "SOP Diskon penjualan", "SOP Invoicing penjualan dan penagihan", "SOP Uang muka penjualan", "SOP Penerimaan pelunasan penjualan"]
+    {
+      label: "SOP Penjualan",
+      field: "sop_sales_status",
+      items: [
+        "Prosedur penawaran harga",
+        "Prosedur penerimaan order",
+        "Prosedur pengiriman barang",
+        "Prosedur penagihan",
+        "Prosedur komplain customer"
+      ]
     },
-    { 
-      label: "SOP Financial Management", 
-      statusField: "sop_financial_status",
-      list: ["SOP Pengisian Kas Besar/Kecil", "SOP Pengeluaran Kas/Bank", "SOP Penerimaan Kas/Bank", "SOP Kas Bon", "SOP Perijinan Piutang Karyawan", "SOP Pemindahan saldo bank ke bank lain", "SOP penyetoran kas kasir ke bank", "SOP Pembagian deviden/prive", "SOP pengeluaran tanpa bukti"]
+    {
+      label: "SOP Financial",
+      field: "sop_financial_status",
+      items: [
+        "Prosedur pencatatan transaksi",
+        "Prosedur persetujuan pengeluaran",
+        "Prosedur rekonsiliasi bank",
+        "Prosedur pelaporan keuangan",
+        "Prosedur audit internal"
+      ]
     },
-    { 
-      label: "SOP Inventory Management", 
-      statusField: "sop_inventory_status",
-      list: ["SOP Pengkodean dan Penamaan Barang", "SOP Perhitungan dan update buffer stock", "SOP Penyimpanan barang", "SOP Penataan barang", "SOP Stock opname", "SOP Pemindahan barang", "SOP Pemusnahan barang", "SOP Penyesuaian persediaan", "SOP penggantian barang setelah opname"]
+    {
+      label: "SOP Inventory",
+      field: "sop_inventory_status",
+      items: [
+        "Prosedur stock opname",
+        "Prosedur mutasi barang",
+        "Prosedur pengaturan layout gudang",
+        "Prosedur penanganan barang rusak",
+        "Prosedur reorder point"
+      ]
     },
-    { 
-      label: "SOP Human Development", 
-      statusField: "sop_human_dev_status",
-      list: ["SOP Pemasangan Lowongan Kerja", "SOP Pemanggilan kandidat", "SOP Interview Kerja", "SOP Deal dan Kontrak Kerja", "SOP Pelatihan SDM", "SOP Evaluasi dan Penilaian Kinerja", "SOP Ijin dan cuti karyawan", "SOP Permohonan lembur", "SOP Penggajian karyawan", "SOP Reward dan punishment", "SOP Pemutusan hubungan kerja"]
-    },
+    {
+      label: "SOP Human Development",
+      field: "sop_human_dev_status",
+      items: [
+        "Prosedur rekrutmen",
+        "Prosedur onboarding karyawan",
+        "Prosedur penilaian kinerja",
+        "Prosedur training & development",
+        "Prosedur terminasi karyawan"
+      ]
+    }
   ];
+
+  const parseValue = (value: any) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return { checked: [], description: '' };
+      }
+    }
+    return value || { checked: [], description: '' };
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4 text-primary">Standard Operating Procedures (SOP)</h2>
-        <p className="text-muted-foreground mb-6">Evaluasi ketersediaan dan kualitas SOP di berbagai area bisnis</p>
+        <h2 className="text-2xl font-bold mb-4 text-primary">Standard Operating Procedure (SOP)</h2>
+        <p className="text-muted-foreground mb-6">Centang SOP yang sudah ada di bisnis Anda</p>
       </div>
 
-      <div className="space-y-6">
-        {sopItems.map((item, index) => (
-          <Card key={index} className="p-4 border-l-4 border-l-primary">
-            <h3 className="font-semibold mb-4">{item.label}</h3>
-            
-            <div className="mb-4 p-3 bg-muted/50 rounded-md">
-              <p className="text-sm font-medium mb-2">Standar SOP yang perlu ada:</p>
-              <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-                {item.list.map((sop, idx) => (
-                  <li key={idx}>{sop}</li>
+      {sopItems.map((sopItem) => {
+        const currentValue = parseValue(formData[sopItem.field]);
+        
+        return (
+          <Card key={sopItem.field} className="p-4">
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">{sopItem.label} *</Label>
+              
+              <div className="space-y-3">
+                {sopItem.items.map((item) => (
+                  <div key={item} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`${sopItem.field}-${item}`}
+                      checked={currentValue.checked.includes(item)}
+                      onCheckedChange={(checked) => {
+                        const newChecked = checked
+                          ? [...currentValue.checked, item]
+                          : currentValue.checked.filter((i: string) => i !== item);
+                        handleChange(sopItem.field, JSON.stringify({ ...currentValue, checked: newChecked }));
+                      }}
+                    />
+                    <Label htmlFor={`${sopItem.field}-${item}`} className="font-normal cursor-pointer">
+                      {item}
+                    </Label>
+                  </div>
                 ))}
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor={item.statusField}>Kondisi Bisnis Anda *</Label>
-              <Textarea
-                id={item.statusField}
-                value={formData[item.statusField]}
-                onChange={(e) => handleChange(item.statusField, e.target.value)}
-                placeholder="Jelaskan kondisi SOP di bisnis Anda saat ini..."
-                required
-                rows={4}
-              />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`${sopItem.field}-desc`} className="text-sm text-muted-foreground">
+                  Keterangan Kondisi di Bisnis Anda (Opsional)
+                </Label>
+                <Textarea
+                  id={`${sopItem.field}-desc`}
+                  value={currentValue.description || ''}
+                  onChange={(e) => 
+                    handleChange(sopItem.field, JSON.stringify({ ...currentValue, description: e.target.value }))
+                  }
+                  placeholder="Jelaskan kondisi lebih detail jika diperlukan..."
+                  rows={2}
+                />
+              </div>
             </div>
           </Card>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };

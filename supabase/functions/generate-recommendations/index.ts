@@ -21,6 +21,28 @@ serve(async (req) => {
       throw new Error('OPENROUTER_API_KEY not configured');
     }
 
+    // Helper function to parse JSON responses
+    const parseField = (field: any) => {
+      if (!field) return 'Tidak ada data';
+      try {
+        const parsed = typeof field === 'string' ? JSON.parse(field) : field;
+        if (parsed.value) {
+          return parsed.description 
+            ? `${parsed.value} (${parsed.description})`
+            : parsed.value;
+        }
+        if (parsed.checked) {
+          const checkedItems = parsed.checked.join(', ') || 'Tidak ada yang dipilih';
+          return parsed.description
+            ? `Yang sudah ada: ${checkedItems}. Keterangan: ${parsed.description}`
+            : `Yang sudah ada: ${checkedItems}`;
+        }
+        return field;
+      } catch {
+        return field;
+      }
+    };
+
     // Build comprehensive analysis prompt for each question
     const prompt = `Anda adalah konsultan bisnis profesional. Analisis setiap aspek bisnis berikut dan berikan penjelasan mengapa penting serta rekomendasi spesifik.
 
@@ -33,41 +55,41 @@ PROFIL PERUSAHAAN:
 - Omzet Bulanan: ${assessmentData.monthly_revenue}
 
 ORGANISASI & MANAJEMEN:
-- Visi Misi & Budaya: ${assessmentData.vision_mission_culture}
-- Struktur Organisasi Tertulis: ${assessmentData.written_org_structure}
-- Pembagian Departemen: ${assessmentData.department_division}
-- Pemahaman Job Description: ${assessmentData.job_description_understanding}
-- Kontrol & Update Pekerjaan: ${assessmentData.work_control_update}
-- Tools Management: ${assessmentData.task_management_tools}
+- Visi Misi & Budaya: ${parseField(assessmentData.vision_mission_culture)}
+- Struktur Organisasi Tertulis: ${parseField(assessmentData.written_org_structure)}
+- Pembagian Departemen: ${parseField(assessmentData.department_division)}
+- Pemahaman Job Description: ${parseField(assessmentData.job_description_understanding)}
+- Kontrol & Update Pekerjaan: ${parseField(assessmentData.work_control_update)}
+- Tools Management: ${parseField(assessmentData.task_management_tools)}
 
 SOP:
-- SOP Pembelian: ${assessmentData.sop_purchasing_status}
-- SOP Produksi: ${assessmentData.sop_production_status}
-- SOP Penjualan: ${assessmentData.sop_sales_status}
-- SOP Financial: ${assessmentData.sop_financial_status}
-- SOP Inventory: ${assessmentData.sop_inventory_status}
-- SOP Human Dev: ${assessmentData.sop_human_dev_status}
+- SOP Pembelian: ${parseField(assessmentData.sop_purchasing_status)}
+- SOP Produksi: ${parseField(assessmentData.sop_production_status)}
+- SOP Penjualan: ${parseField(assessmentData.sop_sales_status)}
+- SOP Financial: ${parseField(assessmentData.sop_financial_status)}
+- SOP Inventory: ${parseField(assessmentData.sop_inventory_status)}
+- SOP Human Dev: ${parseField(assessmentData.sop_human_dev_status)}
 
 DOKUMENTASI:
-- Dokumen Pembelian: ${assessmentData.doc_purchasing_status}
-- Dokumen Produksi: ${assessmentData.doc_production_status}
-- Dokumen Penjualan: ${assessmentData.doc_sales_status}
-- Dokumen Financial: ${assessmentData.doc_financial_status}
-- Dokumen Inventory: ${assessmentData.doc_inventory_status}
+- Dokumen Pembelian: ${parseField(assessmentData.doc_purchasing_status)}
+- Dokumen Produksi: ${parseField(assessmentData.doc_production_status)}
+- Dokumen Penjualan: ${parseField(assessmentData.doc_sales_status)}
+- Dokumen Financial: ${parseField(assessmentData.doc_financial_status)}
+- Dokumen Inventory: ${parseField(assessmentData.doc_inventory_status)}
 
 INVENTORY & ASET:
-- Kode & Kategori Inventory: ${assessmentData.inventory_code_category}
-- Layout Gudang: ${assessmentData.warehouse_layout}
-- Peralatan Gudang: ${assessmentData.warehouse_equipment}
-- Kartu Stock: ${assessmentData.stock_card}
-- Buffer Stock & Reorder: ${assessmentData.buffer_stock_reorder}
-- Pencatatan Aset Tetap: ${assessmentData.fixed_asset_recording}
+- Kode & Kategori Inventory: ${parseField(assessmentData.inventory_code_category)}
+- Layout Gudang: ${parseField(assessmentData.warehouse_layout)}
+- Peralatan Gudang: ${parseField(assessmentData.warehouse_equipment)}
+- Kartu Stock: ${parseField(assessmentData.stock_card)}
+- Buffer Stock & Reorder: ${parseField(assessmentData.buffer_stock_reorder)}
+- Pencatatan Aset Tetap: ${parseField(assessmentData.fixed_asset_recording)}
 
 KEUANGAN:
-- Software Keuangan: ${assessmentData.financial_software}
-- Laporan Keuangan: ${assessmentData.financial_reports}
-- Chart of Account: ${assessmentData.coa}
-- Klasifikasi Customer/Supplier: ${assessmentData.customer_supplier_classification}
+- Software Keuangan: ${parseField(assessmentData.financial_software)}
+- Laporan Keuangan: ${parseField(assessmentData.financial_reports)}
+- Chart of Account: ${parseField(assessmentData.coa)}
+- Klasifikasi Customer/Supplier: ${parseField(assessmentData.customer_supplier_classification)}
 
 Untuk SETIAP aspek di atas, berikan analisis dalam format JSON array dengan struktur:
 [

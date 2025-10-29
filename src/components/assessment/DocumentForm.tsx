@@ -1,5 +1,6 @@
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Card } from "@/components/ui/card";
 
 interface DocumentFormProps {
@@ -13,68 +14,127 @@ export const DocumentForm = ({ formData, setFormData }: DocumentFormProps) => {
   };
 
   const documentItems = [
-    { 
-      label: "Dokumen Pembelian", 
-      statusField: "doc_purchasing_status",
-      list: ["Purchase Request", "Purchase Order", "Receiving", "Purchase Invoice", "Purchase Return", "Bank/Cash Disbursement"]
+    {
+      label: "Dokumen Pembelian",
+      field: "doc_purchasing_status",
+      items: [
+        "Purchase Request (PR)",
+        "Purchase Order (PO)",
+        "Surat Jalan Penerimaan",
+        "Berita Acara Serah Terima",
+        "Invoice Supplier"
+      ]
     },
-    { 
-      label: "Dokumen Produksi", 
-      statusField: "doc_production_status",
-      list: ["Formula product", "Work Order", "Material Release", "Product Result"]
+    {
+      label: "Dokumen Produksi",
+      field: "doc_production_status",
+      items: [
+        "Work Order",
+        "Bill of Materials (BOM)",
+        "Quality Control Report",
+        "Production Daily Report",
+        "Laporan Waste/Scrap"
+      ]
     },
-    { 
-      label: "Dokumen Penjualan", 
-      statusField: "doc_sales_status",
-      list: ["Sales Quotation", "Sales Order", "Delivery Order", "Sales Invoice", "Sales Return", "Bank/Cash Disbursement"]
+    {
+      label: "Dokumen Penjualan",
+      field: "doc_sales_status",
+      items: [
+        "Quotation/Penawaran Harga",
+        "Sales Order (SO)",
+        "Surat Jalan Pengiriman",
+        "Invoice Customer",
+        "Bukti Penerimaan Barang"
+      ]
     },
-    { 
-      label: "Dokumen Financial Management", 
-      statusField: "doc_financial_status",
-      list: ["Pengeluaran Kas", "Penerimaan Kas", "Pengisian Kas (Kecil/Besar)", "Reimburse / Kas Bon"]
+    {
+      label: "Dokumen Financial",
+      field: "doc_financial_status",
+      items: [
+        "Bukti Kas Masuk/Keluar",
+        "Bukti Bank In/Out",
+        "Bukti Memorial",
+        "Laporan Laba Rugi",
+        "Neraca"
+      ]
     },
-    { 
-      label: "Dokumen Inventory Management", 
-      statusField: "doc_inventory_status",
-      list: ["Inventory Transfer", "Inventory Adjustment", "Inventory Destroyed"]
-    },
+    {
+      label: "Dokumen Inventory",
+      field: "doc_inventory_status",
+      items: [
+        "Kartu Stock",
+        "Berita Acara Stock Opname",
+        "Surat Mutasi Barang",
+        "Laporan Persediaan",
+        "Form Barang Rusak/Hilang"
+      ]
+    }
   ];
+
+  const parseValue = (value: any) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return { checked: [], description: '' };
+      }
+    }
+    return value || { checked: [], description: '' };
+  };
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold mb-4 text-primary">Dokumentasi Bisnis</h2>
-        <p className="text-muted-foreground mb-6">Evaluasi kelengkapan dokumentasi di berbagai area bisnis</p>
+        <h2 className="text-2xl font-bold mb-4 text-primary">Dokumen Bisnis</h2>
+        <p className="text-muted-foreground mb-6">Centang dokumen yang sudah digunakan di bisnis Anda</p>
       </div>
 
-      <div className="space-y-6">
-        {documentItems.map((item, index) => (
-          <Card key={index} className="p-4 border-l-4 border-l-accent">
-            <h3 className="font-semibold mb-4">{item.label}</h3>
-            
-            <div className="mb-4 p-3 bg-muted/50 rounded-md">
-              <p className="text-sm font-medium mb-2">Standar dokumen yang perlu ada:</p>
-              <ul className="text-sm space-y-1 list-disc list-inside text-muted-foreground">
-                {item.list.map((doc, idx) => (
-                  <li key={idx}>{doc}</li>
+      {documentItems.map((docItem) => {
+        const currentValue = parseValue(formData[docItem.field]);
+        
+        return (
+          <Card key={docItem.field} className="p-4">
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">{docItem.label} *</Label>
+              
+              <div className="space-y-3">
+                {docItem.items.map((item) => (
+                  <div key={item} className="flex items-center space-x-2">
+                    <Checkbox
+                      id={`${docItem.field}-${item}`}
+                      checked={currentValue.checked.includes(item)}
+                      onCheckedChange={(checked) => {
+                        const newChecked = checked
+                          ? [...currentValue.checked, item]
+                          : currentValue.checked.filter((i: string) => i !== item);
+                        handleChange(docItem.field, JSON.stringify({ ...currentValue, checked: newChecked }));
+                      }}
+                    />
+                    <Label htmlFor={`${docItem.field}-${item}`} className="font-normal cursor-pointer">
+                      {item}
+                    </Label>
+                  </div>
                 ))}
-              </ul>
-            </div>
-            
-            <div className="space-y-2">
-              <Label htmlFor={item.statusField}>Kondisi Bisnis Anda *</Label>
-              <Textarea
-                id={item.statusField}
-                value={formData[item.statusField]}
-                onChange={(e) => handleChange(item.statusField, e.target.value)}
-                placeholder="Jelaskan kondisi dokumentasi di bisnis Anda saat ini..."
-                required
-                rows={4}
-              />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor={`${docItem.field}-desc`} className="text-sm text-muted-foreground">
+                  Keterangan Kondisi di Bisnis Anda (Opsional)
+                </Label>
+                <Textarea
+                  id={`${docItem.field}-desc`}
+                  value={currentValue.description || ''}
+                  onChange={(e) => 
+                    handleChange(docItem.field, JSON.stringify({ ...currentValue, description: e.target.value }))
+                  }
+                  placeholder="Jelaskan kondisi lebih detail jika diperlukan..."
+                  rows={2}
+                />
+              </div>
             </div>
           </Card>
-        ))}
-      </div>
+        );
+      })}
     </div>
   );
 };

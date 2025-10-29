@@ -5,6 +5,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Loader2, FileText, MessageSquare } from "lucide-react";
 import { CompanyInfo } from "@/components/report/CompanyInfo";
+import { ScoreSection } from "@/components/report/ScoreSection";
 import { AnalysisSection } from "@/components/report/AnalysisSection";
 import { CTASection } from "@/components/report/CTASection";
 
@@ -87,6 +88,7 @@ const Report = () => {
 
         <div className="space-y-6">
           <CompanyInfo assessment={assessment} />
+          <ScoreSection assessment={assessment} />
           <AnalysisSection analysis={assessment.ai_analysis} />
           <CTASection />
         </div>

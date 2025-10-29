@@ -156,8 +156,12 @@ export const CompanyDataForm = ({ formData, setFormData }: CompanyDataFormProps)
           <Input
             id="monthly_revenue"
             value={formData.monthly_revenue}
-            onChange={(e) => handleChange('monthly_revenue', e.target.value)}
-            placeholder="contoh: Rp 1.200.000.000"
+            onChange={(e) => {
+              const value = e.target.value.replace(/\D/g, '');
+              const formatted = value ? `Rp ${parseInt(value).toLocaleString('id-ID')}` : '';
+              handleChange('monthly_revenue', formatted);
+            }}
+            placeholder="contoh: Rp 100.000.000"
             required
           />
         </div>

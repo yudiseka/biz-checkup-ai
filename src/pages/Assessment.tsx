@@ -72,12 +72,39 @@ const Assessment = () => {
     };
 
     const fieldsToValidate = stepFields[currentStep] || [];
-    const emptyFields = fieldsToValidate.filter(field => !formData[field] || formData[field].toString().trim() === '');
-
-    if (emptyFields.length > 0) {
-      toast.error("Mohon lengkapi semua field yang diperlukan sebelum melanjutkan.");
-      return false;
+    
+    for (const field of fieldsToValidate) {
+      const value = formData[field];
+      
+      if (!value || value.toString().trim() === '') {
+        toast.error("Mohon lengkapi semua field yang diperlukan sebelum melanjutkan.");
+        return false;
+      }
+      
+      // Check JSON fields for radio and checkbox responses
+      if (currentStep >= 2) {
+        try {
+          const parsed = typeof value === 'string' ? JSON.parse(value) : value;
+          
+          // For radio fields (steps 2, 5, 6), check if value is selected
+          if ([2, 5, 6].includes(currentStep)) {
+            if (!parsed.value || parsed.value === '') {
+              toast.error("Mohon pilih salah satu opsi untuk setiap pertanyaan.");
+              return false;
+            }
+          }
+          
+          // For checkbox fields (steps 3, 4), no validation needed as empty is valid
+        } catch {
+          // If not JSON, treat as simple text validation (step 1)
+          if (!value || value.toString().trim() === '') {
+            toast.error("Mohon lengkapi semua field yang diperlukan sebelum melanjutkan.");
+            return false;
+          }
+        }
+      }
     }
+    
     return true;
   };
 

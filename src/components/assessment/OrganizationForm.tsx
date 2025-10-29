@@ -1,5 +1,7 @@
 import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Card } from "@/components/ui/card";
 
 interface OrganizationFormProps {
   formData: any;
@@ -11,81 +13,123 @@ export const OrganizationForm = ({ formData, setFormData }: OrganizationFormProp
     setFormData({ ...formData, [field]: value });
   };
 
+  const organizationItems = [
+    {
+      label: "Visi Misi & Budaya Perusahaan",
+      field: "vision_mission_culture",
+      options: [
+        { value: "Sudah ada dan terdokumentasi dengan baik", score: 3 },
+        { value: "Ada tapi belum terdokumentasi dengan baik", score: 2 },
+        { value: "Belum ada", score: 1 }
+      ]
+    },
+    {
+      label: "Struktur Organisasi Tertulis",
+      field: "written_org_structure",
+      options: [
+        { value: "Sudah ada dan jelas", score: 3 },
+        { value: "Ada tapi kurang jelas", score: 2 },
+        { value: "Belum ada", score: 1 }
+      ]
+    },
+    {
+      label: "Pembagian Departemen/Divisi",
+      field: "department_division",
+      options: [
+        { value: "Sudah terbagi dengan jelas", score: 3 },
+        { value: "Sudah ada tapi belum optimal", score: 2 },
+        { value: "Belum ada pembagian", score: 1 }
+      ]
+    },
+    {
+      label: "Pemahaman Job Description",
+      field: "job_description_understanding",
+      options: [
+        { value: "Semua staff paham dan ada dokumen tertulis", score: 3 },
+        { value: "Sebagian paham tapi belum terdokumentasi", score: 2 },
+        { value: "Belum ada job description", score: 1 }
+      ]
+    },
+    {
+      label: "Kontrol & Update Pekerjaan",
+      field: "work_control_update",
+      options: [
+        { value: "Ada sistem kontrol yang jelas dan rutin", score: 3 },
+        { value: "Ada tapi tidak konsisten", score: 2 },
+        { value: "Belum ada sistem kontrol", score: 1 }
+      ]
+    },
+    {
+      label: "Tools Management Pekerjaan",
+      field: "task_management_tools",
+      options: [
+        { value: "Menggunakan tools digital yang terstruktur", score: 3 },
+        { value: "Menggunakan tools sederhana (Excel, WhatsApp)", score: 2 },
+        { value: "Belum menggunakan tools khusus", score: 1 }
+      ]
+    }
+  ];
+
+  const parseValue = (value: any) => {
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch {
+        return { value: value, description: '' };
+      }
+    }
+    return value || { value: '', description: '' };
+  };
+
   return (
     <div className="space-y-6">
       <div>
         <h2 className="text-2xl font-bold mb-4 text-primary">Struktur Organisasi & Manajemen</h2>
-        <p className="text-muted-foreground mb-6">Evaluasi sistem organisasi dan manajemen perusahaan</p>
+        <p className="text-muted-foreground mb-6">Pilih kondisi yang paling sesuai dengan bisnis Anda</p>
       </div>
 
-      <div className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="vision_mission_culture">Visi Misi dan Budaya Perusahaan *</Label>
-          <Input
-            id="vision_mission_culture"
-            value={formData.vision_mission_culture}
-            onChange={(e) => handleChange('vision_mission_culture', e.target.value)}
-            placeholder="contoh: Belum ada, Sudah ada tapi belum ditempel, Sudah ada dan tertempel"
-            required
-          />
-        </div>
+      {organizationItems.map((item) => {
+        const currentValue = parseValue(formData[item.field]);
+        
+        return (
+          <Card key={item.field} className="p-4">
+            <div className="space-y-4">
+              <Label className="text-base font-semibold">{item.label} *</Label>
+              
+              <RadioGroup
+                value={currentValue.value}
+                onValueChange={(value) => 
+                  handleChange(item.field, JSON.stringify({ ...currentValue, value }))
+                }
+              >
+                {item.options.map((option) => (
+                  <div key={option.value} className="flex items-center space-x-2">
+                    <RadioGroupItem value={option.value} id={`${item.field}-${option.value}`} />
+                    <Label htmlFor={`${item.field}-${option.value}`} className="font-normal cursor-pointer">
+                      {option.value}
+                    </Label>
+                  </div>
+                ))}
+              </RadioGroup>
 
-        <div className="space-y-2">
-          <Label htmlFor="written_org_structure">Struktur Organisasi Tertulis *</Label>
-          <Input
-            id="written_org_structure"
-            value={formData.written_org_structure}
-            onChange={(e) => handleChange('written_org_structure', e.target.value)}
-            placeholder="contoh: Belum dibuat, Sebagian besar belum dibuat dan belum ditempel"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="department_division">Pembagian Departemen *</Label>
-          <Input
-            id="department_division"
-            value={formData.department_division}
-            onChange={(e) => handleChange('department_division', e.target.value)}
-            placeholder="contoh: Belum ada departemen yang terpisah dengan jelas"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="job_description_understanding">Pemahaman Job Description *</Label>
-          <Input
-            id="job_description_understanding"
-            value={formData.job_description_understanding}
-            onChange={(e) => handleChange('job_description_understanding', e.target.value)}
-            placeholder="contoh: Masih rendah, belum terdefinisi dengan baik"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="work_control_update">Kontrol & Update Pekerjaan *</Label>
-          <Input
-            id="work_control_update"
-            value={formData.work_control_update}
-            onChange={(e) => handleChange('work_control_update', e.target.value)}
-            placeholder="contoh: Belum rutin dilakukan"
-            required
-          />
-        </div>
-
-        <div className="space-y-2">
-          <Label htmlFor="task_management_tools">Tools Task Management *</Label>
-          <Input
-            id="task_management_tools"
-            value={formData.task_management_tools}
-            onChange={(e) => handleChange('task_management_tools', e.target.value)}
-            placeholder="contoh: Belum ada sistem atau aplikasi khusus"
-            required
-          />
-        </div>
-
-      </div>
+              <div className="space-y-2">
+                <Label htmlFor={`${item.field}-desc`} className="text-sm text-muted-foreground">
+                  Keterangan Kondisi di Bisnis Anda (Opsional)
+                </Label>
+                <Textarea
+                  id={`${item.field}-desc`}
+                  value={currentValue.description || ''}
+                  onChange={(e) => 
+                    handleChange(item.field, JSON.stringify({ ...currentValue, description: e.target.value }))
+                  }
+                  placeholder="Jelaskan kondisi lebih detail jika diperlukan..."
+                  rows={2}
+                />
+              </div>
+            </div>
+          </Card>
+        );
+      })}
     </div>
   );
 };
