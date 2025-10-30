@@ -16,9 +16,9 @@ serve(async (req) => {
     const { assessmentData } = await req.json();
     console.log('Generating recommendations for:', assessmentData.business_field);
 
-    const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
-    if (!OPENROUTER_API_KEY) {
-      throw new Error('OPENROUTER_API_KEY not configured');
+    const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
+    if (!LOVABLE_API_KEY) {
+      throw new Error('LOVABLE_API_KEY not configured');
     }
 
     // Helper function to parse JSON responses
@@ -110,16 +110,14 @@ Berikan analisis yang:
 
 PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
       headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Authorization': `Bearer ${LOVABLE_API_KEY}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://gxqhgmwceuqhuvrpncao.supabase.co',
-        'X-Title': 'Business Checkup AI'
       },
       body: JSON.stringify({
-        model: 'qwen/qwen-2-7b-instruct:free',
+        model: 'google/gemini-2.5-flash',
         messages: [
           {
             role: 'system',
@@ -129,15 +127,14 @@ PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
             role: 'user',
             content: prompt
           }
-        ],
-        response_format: { type: "json_object" }
+        ]
       })
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
-      throw new Error('OpenRouter API error: ' + response.status);
+      console.error('Lovable AI error:', response.status, errorText);
+      throw new Error('Lovable AI error: ' + response.status);
     }
 
     const data = await response.json();
