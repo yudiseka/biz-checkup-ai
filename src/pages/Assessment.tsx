@@ -137,11 +137,16 @@ const Assessment = () => {
       
       // Generate AI analysis in the background
       // The edge function will update the database directly
+      toast.success("Assessment berhasil disimpan! Sedang menghasilkan analisis...");
+      
       supabase.functions.invoke('generate-recommendations', {
         body: { assessmentData: { ...formData, id: data.id } }
-      }).then(({ error: functionError }) => {
+      }).then(({ data: functionData, error: functionError }) => {
         if (functionError) {
           console.error('Error generating analysis:', functionError);
+          toast.error("Gagal menghasilkan analisis AI. Silakan refresh halaman dalam beberapa saat.");
+        } else {
+          console.log('Analysis generated successfully:', functionData);
         }
       });
 

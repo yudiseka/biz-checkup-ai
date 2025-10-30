@@ -136,6 +136,16 @@ PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
     if (!response.ok) {
       const errorText = await response.text();
       console.error('OpenRouter API error:', response.status, errorText);
+      
+      // Provide more specific error messages
+      if (response.status === 429) {
+        throw new Error('Rate limit exceeded. Please try again in a few moments.');
+      } else if (response.status === 401) {
+        throw new Error('Invalid API key. Please check your OpenRouter configuration.');
+      } else if (response.status === 402) {
+        throw new Error('Insufficient credits. Please add credits to your OpenRouter account.');
+      }
+      
       throw new Error('OpenRouter API error: ' + response.status);
     }
 
