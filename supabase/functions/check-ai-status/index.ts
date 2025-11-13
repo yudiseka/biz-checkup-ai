@@ -27,25 +27,53 @@ serve(async (req) => {
       );
     }
 
-    // Make a minimal test request to check AI availability
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://business-checkup.app',
-        'X-Title': 'Business Checkup'
-      },
-      body: JSON.stringify({
-        model: 'tngtech/deepseek-r1t2-chimera:free',
-        messages: [
-          { role: 'user', content: 'test' }
-        ],
-        max_tokens: 5
-      })
-    });
+    // Make a minimal test request with retry logic
+    let response: Response | undefined;
+    let retries = 0;
+    const maxRetries = 2;
+    
+    while (retries <= maxRetries) {
+      response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+          'Content-Type': 'application/json',
+          'HTTP-Referer': 'https://business-checkup.app',
+          'X-Title': 'Business Checkup'
+        },
+        body: JSON.stringify({
+          model: 'tngtech/deepseek-r1t2-chimera:free',
+          messages: [
+            { role: 'user', content: 'test' }
+          ],
+          max_tokens: 5
+        })
+      });
 
-    console.log('OpenRouter status check response:', response.status);
+      console.log(`OpenRouter status check response (attempt ${retries + 1}):`, response.status);
+
+      // If we get 429 and have retries left, wait and retry
+      if (response.status === 429 && retries < maxRetries) {
+        retries++;
+        await new Promise(resolve => setTimeout(resolve, 1000 * retries)); // Wait 1s, then 2s
+        continue;
+      }
+      
+      break;
+    }
+
+    if (!response) {
+      return new Response(
+        JSON.stringify({ 
+          status: 'unavailable',
+          message: 'Tidak dapat menghubungi AI service'
+        }),
+        { 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200 
+        }
+      );
+    }
 
     if (response.status === 429) {
       return new Response(

@@ -15,6 +15,18 @@ const Index = () => {
 
   useEffect(() => {
     const checkAiStatus = async () => {
+      // Check if we have a cached status (valid for 5 minutes)
+      const cachedStatus = localStorage.getItem('ai-status');
+      const cachedTime = localStorage.getItem('ai-status-time');
+      
+      if (cachedStatus && cachedTime) {
+        const cacheAge = Date.now() - parseInt(cachedTime);
+        if (cacheAge < 5 * 60 * 1000) { // 5 minutes
+          setAiStatus(JSON.parse(cachedStatus));
+          return;
+        }
+      }
+
       try {
         const { data, error } = await supabase.functions.invoke('check-ai-status');
         
@@ -27,6 +39,9 @@ const Index = () => {
         }
 
         setAiStatus(data);
+        // Cache the result
+        localStorage.setItem('ai-status', JSON.stringify(data));
+        localStorage.setItem('ai-status-time', Date.now().toString());
       } catch (error) {
         console.error('Error checking AI status:', error);
         setAiStatus({
