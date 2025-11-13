@@ -1,10 +1,43 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { useNavigate } from "react-router-dom";
-import { ClipboardCheck, BarChart3, TrendingUp, Shield } from "lucide-react";
+import { ClipboardCheck, BarChart3, TrendingUp, Shield, CheckCircle2, XCircle, AlertCircle } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const Index = () => {
   const navigate = useNavigate();
+  const [aiStatus, setAiStatus] = useState<{
+    status: 'ready' | 'limited' | 'unavailable' | 'checking';
+    message: string;
+  }>({ status: 'checking', message: 'Memeriksa status AI...' });
+
+  useEffect(() => {
+    const checkAiStatus = async () => {
+      try {
+        const { data, error } = await supabase.functions.invoke('check-ai-status');
+        
+        if (error) {
+          setAiStatus({
+            status: 'unavailable',
+            message: 'Tidak dapat memeriksa status AI'
+          });
+          return;
+        }
+
+        setAiStatus(data);
+      } catch (error) {
+        console.error('Error checking AI status:', error);
+        setAiStatus({
+          status: 'unavailable',
+          message: 'Tidak dapat memeriksa status AI'
+        });
+      }
+    };
+
+    checkAiStatus();
+  }, []);
 
   return (
     <div className="min-h-screen">
@@ -13,6 +46,34 @@ const Index = () => {
         <div className="absolute inset-0 bg-grid-white/10 bg-[size:20px_20px]" />
         <div className="container mx-auto max-w-6xl relative z-10">
           <div className="text-center text-white space-y-6">
+            {/* AI Status Badge */}
+            <div className="flex justify-center mb-4">
+              {aiStatus.status === 'checking' && (
+                <Badge variant="secondary" className="text-sm px-4 py-2">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  {aiStatus.message}
+                </Badge>
+              )}
+              {aiStatus.status === 'ready' && (
+                <Badge className="bg-green-500 hover:bg-green-600 text-white text-sm px-4 py-2">
+                  <CheckCircle2 className="w-4 h-4 mr-2" />
+                  {aiStatus.message}
+                </Badge>
+              )}
+              {aiStatus.status === 'limited' && (
+                <Badge variant="destructive" className="text-sm px-4 py-2">
+                  <AlertCircle className="w-4 h-4 mr-2" />
+                  {aiStatus.message}
+                </Badge>
+              )}
+              {aiStatus.status === 'unavailable' && (
+                <Badge variant="destructive" className="text-sm px-4 py-2">
+                  <XCircle className="w-4 h-4 mr-2" />
+                  {aiStatus.message}
+                </Badge>
+              )}
+            </div>
+
             <h1 className="text-5xl md:text-6xl font-bold leading-tight">
               Business Checkup
             </h1>
@@ -22,7 +83,8 @@ const Index = () => {
             <Button
               size="lg"
               onClick={() => navigate('/assessment')}
-              className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 h-auto"
+              disabled={aiStatus.status !== 'ready'}
+              className="bg-white text-primary hover:bg-white/90 text-lg px-8 py-6 h-auto disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <ClipboardCheck className="w-5 h-5 mr-2" />
               Mulai Assessment

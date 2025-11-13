@@ -2,3 +2,6 @@ project_id = "gxqhgmwceuqhuvrpncao"
 
 [functions.generate-recommendations]
 verify_jwt = false
+
+[functions.check-ai-status]
+verify_jwt = false
