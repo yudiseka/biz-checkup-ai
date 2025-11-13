@@ -37,7 +37,7 @@ serve(async (req) => {
         'X-Title': 'Business Checkup'
       },
       body: JSON.stringify({
-        model: 'google/gemini-2.0-flash-exp:free',
+        model: 'tngtech/deepseek-r1t2-chimera:free',
         messages: [
           { role: 'user', content: 'test' }
         ],
