@@ -42,7 +42,7 @@ serve(async (req) => {
           'X-Title': 'Business Checkup'
         },
         body: JSON.stringify({
-          model: 'tngtech/deepseek-r1t2-chimera:free',
+          model: 'openrouter/free',
           messages: [
             { role: 'user', content: 'test' }
           ],

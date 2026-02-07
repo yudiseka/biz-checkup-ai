@@ -118,7 +118,7 @@ PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
         'X-Title': 'Business Checkup AI'
       },
       body: JSON.stringify({
-        model: 'tngtech/deepseek-r1t2-chimera:free',
+        model: 'openrouter/free',
         messages: [
           {
             role: 'system',
@@ -152,6 +152,12 @@ PENTING: Response harus berupa valid JSON array saja, tanpa teks tambahan.`;
     let analysisContent = data.choices[0].message.content;
     
     console.log('Raw AI response:', analysisContent);
+
+    // Strip thinking blocks from reasoning models (e.g., DeepSeek R1)
+    if (analysisContent.includes('<think>')) {
+      analysisContent = analysisContent.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
+      console.log('Stripped thinking blocks from response');
+    }
 
     // Strip markdown code blocks if present
     if (analysisContent.includes('```')) {
