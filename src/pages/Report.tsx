@@ -41,8 +41,8 @@ const Report = () => {
             }
           }, 3000);
 
-          // Stop polling after 60 seconds
-          setTimeout(() => clearInterval(pollInterval), 60000);
+          // Stop polling after 3 minutes (AI may take time with fallback models)
+          setTimeout(() => clearInterval(pollInterval), 180000);
         }
       } catch (error) {
         console.error('Error fetching assessment:', error);
