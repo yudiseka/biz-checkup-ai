@@ -85,7 +85,7 @@ Buat 10 item analisis terpenting. HANYA JSON array, tanpa teks lain.`;
         'X-Title': 'Business Checkup AI'
       },
       body: JSON.stringify({
-        model: 'openrouter/free',
+        model: 'deepseek/deepseek-v4.1-flash',
         messages: [
           {
             role: 'system',

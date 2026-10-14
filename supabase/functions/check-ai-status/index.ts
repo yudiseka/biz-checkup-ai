@@ -39,7 +39,7 @@ serve(async (req) => {
         'X-Title': 'Business Checkup'
       },
       body: JSON.stringify({
-        model: 'openrouter/free',
+        model: 'deepseek/deepseek-v4.1-flash',
         messages: [
           { role: 'user', content: 'test' }
         ],
