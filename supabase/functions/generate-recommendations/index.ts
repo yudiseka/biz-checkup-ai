@@ -6,6 +6,48 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Model dicoba berurutan. v4.1-flash kadang menghasilkan JSON cacat saat reasoning;
+// fallback v3.2 / gpt-4o-mini jauh lebih stabil untuk strict JSON.
+const MODELS = [
+  'deepseek/deepseek-v4.1-flash',
+  'deepseek/deepseek-v3.2',
+  'openai/gpt-4o-mini',
+];
+
+function cleanAndParse(content: string): any[] {
+  let s = (content || '').trim();
+
+  // Buang blok reasoning模型 reasoning
+  s = s.replace(/<think>[\s\S]*?<\/think>/gi, '');
+  s = s.replace(/<thinking>[\s\S]*?<\/thinking>/gi, '');
+
+  // Buang markdown code fence
+  s = s.replace(/```json/gi, '').replace(/```/g, '').trim();
+
+  // Ambil array pertama saja (buang teks pembuka/penutup)
+  const match = s.match(/\[[\s\S]*\]/);
+  if (match) s = match[0];
+
+  // Perbaiki trailing comma yang sering muncul dari model reasoning
+  let normalized = s.replace(/,\s*]/g, ']').replace(/,\s*}/g, '}');
+
+  const attempts = [
+    normalized,
+    normalized.replace(/\r?\n/g, '\\n'),
+    normalized.replace(/([{,]\s*)([A-Za-z_][A-Za-z0-9_]*)\s*:/g, '$1"$2":'),
+  ];
+
+  for (const candidate of attempts) {
+    try {
+      const parsed = JSON.parse(candidate);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    } catch (_) {
+      // coba kandidat berikutnya
+    }
+  }
+  throw new Error('Failed to parse AI response');
+}
+
 serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -13,7 +55,13 @@ serve(async (req) => {
 
   try {
     const { assessmentData } = await req.json();
-    console.log('Generating recommendations for:', assessmentData.business_field);
+    if (!assessmentData || !assessmentData.id) {
+      return new Response(
+        JSON.stringify({ error: 'assessmentData.id wajib diisi' }),
+        { status: 400, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    console.log('Generating recommendations for:', assessmentData.business_field, assessmentData.id);
 
     const OPENROUTER_API_KEY = Deno.env.get('OPENROUTER_API_KEY');
     if (!OPENROUTER_API_KEY) {
@@ -32,7 +80,6 @@ serve(async (req) => {
       }
     };
 
-    // Simplified prompt - shorter to avoid timeout
     const prompt = `Anda konsultan bisnis. Analisis bisnis ini dan beri rekomendasi dalam JSON array.
 
 Bisnis: ${assessmentData.business_field}, ${assessmentData.domicile}, ${assessmentData.num_branches} cabang, ${assessmentData.num_office_staff} staff office, ${assessmentData.num_operational_staff} staff ops, omzet ${assessmentData.monthly_revenue}
@@ -66,88 +113,76 @@ Laporan Keuangan: ${parseField(assessmentData.financial_reports)}
 COA: ${parseField(assessmentData.coa)}
 Klasifikasi Customer/Supplier: ${parseField(assessmentData.customer_supplier_classification)}
 
-Format JSON array: [{"kategori":"nama kategori","aspek":"nama aspek","kondisi":"kondisi saat ini","pentingnya":"mengapa penting","rekomendasi":"saran spesifik"}]
+Buat 10 item analisis terpenting.
+Format JSON array valid, persis 5 kunci per item:
+[{"kategori":"...","aspek":"...","kondisi":"...","pentingnya":"...","rekomendasi":"..."}]
 
-Buat 10 item analisis terpenting. HANYA JSON array, tanpa teks lain.`;
+ATURAN KETAT:
+- HANYA JSON array. Tanpa markdown, tanpa ```json, tanpa penjelasan.
+- Jangan pakai trailing comma.
+- Semua tanda kutip di dalam nilai harus di-escape.
+- Jangan pakai newline mentah di dalam nilai string.`;
 
-    console.log('Prompt length:', prompt.length);
+    let analysis: any[] | null = null;
+    let lastError = '';
 
-    // Use abort controller with 90s timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 90000);
+    for (const model of MODELS) {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 55000);
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'Content-Type': 'application/json',
-        'HTTP-Referer': 'https://gxqhgmwceuqhuvrpncao.supabase.co',
-        'X-Title': 'Business Checkup AI'
-      },
-      body: JSON.stringify({
-        model: 'deepseek/deepseek-v4.1-flash',
-        messages: [
-          {
-            role: 'system',
-            content: 'Respond ONLY with a valid JSON array. No markdown, no extra text.'
+        const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+            'Content-Type': 'application/json',
+            'HTTP-Referer': 'https://gxqhgmwceuqhuvrpncao.supabase.co',
+            'X-Title': 'Business Checkup AI'
           },
-          {
-            role: 'user',
-            content: prompt
-          }
-        ],
-        max_tokens: 3000,
-        provider: {
-          sort: 'throughput'
+          body: JSON.stringify({
+            model,
+            messages: [
+              {
+                role: 'system',
+                content: 'Anda hanya menghasilkan JSON array yang valid. Tanpa markdown, tanpa teks tambahan, tanpa trailing comma.'
+              },
+              { role: 'user', content: prompt }
+            ],
+            max_tokens: 3000,
+            temperature: 0.2
+          }),
+          signal: controller.signal
+        });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          const errText = await response.text();
+          lastError = `OpenRouter ${response.status}: ${errText.substring(0, 200)}`;
+          console.error('Model gagal:', model, lastError);
+          continue;
         }
-      }),
-      signal: controller.signal
-    });
 
-    clearTimeout(timeoutId);
+        const data = await response.json();
+        const raw = data.choices?.[0]?.message?.content;
+        if (!raw) {
+          lastError = `Respons kosong dari ${model}`;
+          console.error(lastError);
+          continue;
+        }
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
-      throw new Error('OpenRouter API error: ' + response.status);
+        analysis = cleanAndParse(raw);
+        console.log('Berhasil dengan model:', model, '| items:', analysis.length);
+        break;
+      } catch (e) {
+        lastError = e instanceof Error ? e.message : String(e);
+        console.error('Exception model', model, lastError);
+      }
     }
 
-    const data = await response.json();
-    let analysisContent = data.choices?.[0]?.message?.content;
-    
-    if (!analysisContent) {
-      throw new Error('Empty response from AI');
+    if (!analysis) {
+      throw new Error('Semua model gagal. Terakhir: ' + lastError);
     }
 
-    console.log('Raw AI response length:', analysisContent.length);
-
-    // Strip thinking blocks
-    if (analysisContent.includes('<think>')) {
-      analysisContent = analysisContent.replace(/<think>[\s\S]*?<\/think>/g, '').trim();
-    }
-
-    // Strip markdown code blocks
-    if (analysisContent.includes('```')) {
-      analysisContent = analysisContent.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-    }
-
-    // Try to extract JSON array if there's extra text
-    const jsonMatch = analysisContent.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      analysisContent = jsonMatch[0];
-    }
-
-    let analysis;
-    try {
-      analysis = JSON.parse(analysisContent);
-      console.log('Analysis parsed, items:', analysis.length);
-    } catch (parseError) {
-      console.error('Parse error:', parseError);
-      console.error('Content:', analysisContent.substring(0, 300));
-      throw new Error('Failed to parse AI response');
-    }
-
-    // Update database
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
@@ -162,8 +197,7 @@ Buat 10 item analisis terpenting. HANYA JSON array, tanpa teks lain.`;
       throw new Error('Failed to update assessment');
     }
 
-    console.log('Assessment updated successfully');
-
+    console.log('Assessment updated successfully:', assessmentData.id);
     return new Response(
       JSON.stringify({ analysis }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
@@ -174,10 +208,7 @@ Buat 10 item analisis terpenting. HANYA JSON array, tanpa teks lain.`;
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return new Response(
       JSON.stringify({ error: errorMessage }),
-      { 
-        status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' }
-      }
+      { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
   }
 });

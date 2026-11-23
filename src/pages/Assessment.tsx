@@ -134,23 +134,27 @@ const Assessment = () => {
         .single();
 
       if (error) throw error;
-      
-      // Generate AI analysis in the background
-      // The edge function will update the database directly
-      toast.success("Assessment berhasil disimpan! Sedang menghasilkan analisis...");
-      
-      supabase.functions.invoke('generate-recommendations', {
-        body: { assessmentData: { ...formData, id: data.id } }
-      }).then(({ data: functionData, error: functionError }) => {
-        if (functionError) {
-          console.error('Error generating analysis:', functionError);
-          toast.error("Gagal menghasilkan analisis AI. Silakan refresh halaman dalam beberapa saat.");
-        } else {
-          console.log('Analysis generated successfully:', functionData);
-        }
-      });
 
-      navigate(`/report/${data.id}`);
+      // Kirim data hasil INSERT (sudah tervalidasi & bersih dari field undefined),
+      // lalu TUNGGU selesai sebelum pindah ke halaman laporan.
+      toast.success("Assessment tersimpan. Membuat analisis AI...");
+
+      let aiMessage = "";
+      try {
+        const { data: functionData, error: functionError } = await supabase.functions.invoke(
+          'generate-recommendations',
+          { body: { assessmentData: { ...data } } }
+        );
+        if (functionError) throw functionError;
+        console.log('Analysis generated successfully:', functionData);
+        aiMessage = "";
+      } catch (aiError) {
+        console.error('Error generating analysis:', aiError);
+        // Laporan tetap dibuka; Report.tsx akan retry otomatis & tampilkan pesan.
+        aiMessage = "?ai=pending";
+      }
+
+      navigate(`/report/${data.id}${aiMessage}`);
     } catch (error) {
       console.error('Error submitting assessment:', error);
       toast.error("Gagal menyimpan assessment. Silakan coba lagi.");
