@@ -118,8 +118,8 @@ Format JSON array valid, persis 5 kunci per item:
 [{"kategori":"...","aspek":"...","kondisi":"...","pentingnya":"...","rekomendasi":"..."}]
 
 ATURAN KETAT:
-- HANYA JSON array. Tanpa markdown, tanpa ```json, tanpa penjelasan.
-- Jangan pakai trailing comma.
+- HANYA JSON array. Tanpa markdown, tanpa blok kode, tanpa penjelasan.
+- Jangan pakai trailing comma (koma di akhir elemen terakhir).
 - Semua tanda kutip di dalam nilai harus di-escape.
 - Jangan pakai newline mentah di dalam nilai string.`;
 
